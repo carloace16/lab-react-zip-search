@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import "./App.css";
 
 function City({ cityData }) {
@@ -17,16 +17,20 @@ function City({ cityData }) {
   );
 }
 
-function ZipSearchField({ onZipChange }) {
+function ZipSearchField({ zipCode, setZipCode, onSearch }) {
   return (
-    <div>
-      <label>Zip Code:</label>
+    <div style={{ marginBottom: "20px" }}>
+      <label style={{ fontSize: "1.2em" }}>Zip Code:</label>
       <input
         type="text"
-        onChange={(e) => onZipChange(e.target.value)}
-        //onZipChange prop (a function passed from the parent component) to notify the parent whenever the user changes the input value.
+        value={zipCode}
+        onChange={(e) => setZipCode(e.target.value)}
         placeholder="Enter Zip Code"
+        style={{ padding: "10px", fontSize: "1.2em", marginRight: "10px" }}
       />
+      <button onClick={onSearch} style={{ padding: "10px", fontSize: "1.2em" }}>
+        Show Results
+      </button>
     </div>
   );
 }
@@ -36,50 +40,55 @@ function App() {
   const [cities, setCities] = useState([]);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    //Hook for Fetching Data
-    // Hook that runs whenever the zipCode changes.
-    const fetchCityData = async () => {
-      // Asynchronous function to fetch city data.
-      if (zipCode.length !== 5) {
-        // If the zip code is not 5 characters long, clear the cities list.
-        setCities([]);
-        return;
-      }
+  const fetchCityData = async () => {
+    if (zipCode.length !== 5) {
+      setCities([]);
+      setError(true);
+      return;
+    }
 
-      try {
-        const response = await fetch(
-          `https://ctp-zip-code-api.onrender.com/zip/${zipCode}`
-        );
-        if (!response.ok) throw new Error("No results found"); // If the response is not ok, throw an error.
+    try {
+      const response = await fetch(
+        `https://ctp-zip-code-api.onrender.com/zip/${zipCode}`
+      );
+      if (!response.ok) throw new Error("No results found");
 
-        const data = await response.json(); // Parse the response JSON.
-        setCities(data); // Set the cities state with the fetched data.
-        setError(false); // Clear any previous error state.
-      } catch {
-        setCities([]); // If there's an error, clear the cities state.
-        setError(true); // Set the error state to true.
-      }
-    };
+      const data = await response.json();
+      setCities(data);
+      setError(false);
+    } catch {
+      setCities([]);
+      setError(true);
+    }
+  };
 
-    fetchCityData(); // Call the fetchCityData function.
-  }, [zipCode]); // Only re-run this effect when "zipCode" changes.
+  const handleSearch = () => {
+    fetchCityData();
+  };
 
   return (
-    <div className="App">
-      <div className="App-header">
+    <div className="App" style={{ fontSize: "1.5em", padding: "20px" }}>
+      <div
+        className="App-header"
+        style={{ fontSize: "2em", marginBottom: "20px" }}
+      >
         <h1>Zip Code Search</h1>
       </div>
-      <div className="mx-auto" style={{ maxWidth: 400 }}>
-        <ZipSearchField onZipChange={setZipCode} />
+      <div
+        className="mx-auto"
+        style={{ maxWidth: "600px", textAlign: "center" }}
+      >
+        <ZipSearchField
+          zipCode={zipCode}
+          setZipCode={setZipCode}
+          onSearch={handleSearch}
+        />
         {error ? (
           <div>No results found</div>
         ) : (
           <div>
             {cities.map((city) => (
               <City key={city.RecordNumber} cityData={city} />
-              //key prop is a special attribute in React that helps React identify which items have changed, are added, or are removed
-              //city.RecordNumber is used as a unique identifier for each City component
             ))}
           </div>
         )}
